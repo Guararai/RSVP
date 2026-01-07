@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSVP Reader - Leitura Dinâmica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-section {
+            margin: 40px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-primary {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .reader-section {
+            display: none;
+            flex-direction: column;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .reader-section.active {
+            display: flex;
+        }
+
+        .reader-display {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 80px 40px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .word-container {
+            font-size: 48px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-align: center;
+            line-height: 1.2;
+            user-select: none;
+        }
+
+        .word-container .letter {
+            display: inline-block;
+            transition: all 0.15s ease;
+        }
+
+        .word-container .orp {
+            color: #667eea;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            color: #b0b0b0;
+        }
+
+        .control-group input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .control-group input[type="number"],
+        .control-group input[type="color"] {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            width: 80px;
+        }
+
+        .control-group input[type="color"] {
+            width: 50px;
+            height: 35px;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-control {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-control:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .btn-control.play {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-control.play:hover {
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .timeline {
+            width: 100%;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .timeline-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 25px;
+            transition: width 0.1s linear;
+            position: relative;
+        }
+
+        .timeline-handle {
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #b0b0b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 30px 0;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .focus-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .focus-mode.active {
+            display: flex;
+        }
+
+        .focus-mode .word-container {
+            font-size: 64px;
+        }
+
+        .focus-mode .exit-focus {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .focus-mode .exit-focus:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .word-container {
+                font-size: 36px;
+            }
+
+            .control-row {
+                flex-direction: column;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            .playback-controls {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RSVP Reader</h1>
+        </header>
+
+        <div class="input-section">
+            <textarea id="textInput" placeholder="Cole ou digite seu texto aqui. Aceita textos de qualquer tamanho - artigos, livros, documentos completos..."></textarea>
+            <button class="btn-primary" id="loadBtn">Carregar Texto</button>
+        </div>
+
+        <div class="reader-section" id="readerSection">
+            <div class="reader-display">
+                <div class="word-container" id="wordDisplay"></div>
+            </div>
+
+            <div class="controls">
+                <div class="control-row">
+                    <div class="control-group">
+                        <label>Velocidade:</label>
+                        <input type="range" id="wpmRange" min="100" max="1000" value="300" step="50">
+                        <input type="number" id="wpmInput" min="100" max="1000" value="300" step="50">
+                        <span>WPM</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Tamanho:</label>
+                        <input type="range" id="fontSizeRange" min="24" max="96" value="48" step="4">
+                        <span id="fontSizeDisplay">48px</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Cor ORP:</label>
+                        <input type="color" id="orpColor" value="#667eea">
+                    </div>
+                </div>
+
+                <div class="playback-controls">
+                    <button class="btn-control" id="backBtn" title="Voltar">⏮</button>
+                    <button class="btn-control play" id="playBtn" title="Play">▶</button>
+                    <button class="btn-control" id="pauseBtn" title="Pause" style="display:none;">⏸</button>
+                    <button class="btn-control" id="stopBtn" title="Stop">⏹</button>
+                    <button class="btn-control" id="forwardBtn" title="Avançar">⏭</button>
+                </div>
+
+                <div class="timeline" id="timeline">
+                    <div class="timeline-progress" id="timelineProgress">
+                        <div class="timeline-handle"></div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="progressPercent">0%</span>
+                        <span class="stat-label">Progresso</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="wordsRemaining">0</span>
+                        <span class="stat-label">Palavras Restantes</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="timeRemaining">0:00</span>
+                        <span class="stat-label">Tempo Restante</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="currentWord">0</span>
+                        <span class="stat-label">Palavra Atual</span>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="animationsToggle" checked>
+                        <label for="animationsToggle">Animações</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="focusModeToggle">
+                        <label for="focusModeToggle">Modo Foco</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="focus-mode" id="focusMode">
+        <div class="word-container" id="focusWordDisplay"></div>
+        <button class="exit-focus" id="exitFocus">Sair do Modo Foco (ESC)</button>
+    </div>
+
+    <footer>
+        <p>Atalhos: Espaço = Play/Pause | ← = Voltar | → = Avançar | F = Modo Foco</p>
+    </footer>
+
+    <script>
+        class RSVPReader {
+            constructor() {
+                this.words = [];
+                this.currentIndex = 0;
+                this.isPlaying = false;
+                this.wpm = 300;
+                this.fontSize = 48;
+                this.orpColor = '#667eea';
+                this.animationsEnabled = true;
+                this.focusMode = false;
+                this.interval = null;
+                
+                this.initElements();
+                this.initEventListeners();
+                this.loadProgress();
+            }
+
+            initElements() {
+                this.textInput = document.getElementById('textInput');
+                this.loadBtn = document.getElementById('loadBtn');
+                this.readerSection = document.getElementById('readerSection');
+                this.wordDisplay = document.getElementById('wordDisplay');
+                this.focusWordDisplay = document.getElementById('focusWordDisplay');
+                this.playBtn = document.getElementById('playBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.backBtn = document.getElementById('backBtn');
+                this.forwardBtn = document.getElementById('forwardBtn');
+                this.wpmRange = document.getElementById('wpmRange');
+                this.wpmInput = document.getElementById('wpmInput');
+                this.fontSizeRange = document.getElementById('fontSizeRange');
+                this.fontSizeDisplay = document.getElementById('fontSizeDisplay');
+                this.orpColorInput = document.getElementById('orpColor');
+                this.timeline = document.getElementById('timeline');
+                this.timelineProgress = document.getElementById('timelineProgress');
+                this.progressPercent = document.getElementById('progressPercent');
+                this.wordsRemaining = document.getElementById('wordsRemaining');
+                this.timeRemaining = document.getElementById('timeRemaining');
+                this.currentWordStat = document.getElementById('currentWord');
+                this.animationsToggle = document.getElementById('animationsToggle');
+                this.focusModeToggle = document.getElementById('focusModeToggle');
+                this.focusModeDiv = document.getElementById('focusMode');
+                this.exitFocusBtn = document.getElementById('exitFocus');
+            }
+
+            initEventListeners() {
+                this.loadBtn.addEventListener('click', () => this.loadText());
+                this.playBtn.addEventListener('click', () => this.play());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.stopBtn.addEventListener('click', () => this.stop());
+                this.backBtn.addEventListener('click', () => this.back());
+                this.forwardBtn.addEventListener('click', () => this.forward());
+
+                this.wpmRange.addEventListener('input', (e) => {
+                    this.wpm = parseInt(e.target.value);
+                    this.wpmInput.value = this.wpm;
+                    if (this.isPlaying) {
+                        this.pause();
+                        this.play();
+                    }
+                });
+
+                this.wpmInput.addEventListener('input', (e) => {
+                    this.wpm = parseInt(e.target.value);
+                    this.wpmRange.value = this.wpm;
+                    if (this.isPlaying) {
+                        this.pause();
+                        this.play();
+                    }
+                });
+
+                this.fontSizeRange.addEventListener('input', (e) => {
+                    this.fontSize = parseInt(e.target.value);
+                    this.fontSizeDisplay.textContent = this.fontSize + 'px';
+                    this.wordDisplay.style.fontSize = this.fontSize + 'px';
+                    this.focusWordDisplay.style.fontSize = (this.fontSize + 16) + 'px';
+                });
+
+                this.orpColorInput.addEventListener('input', (e) => {
+                    this.orpColor = e.target.value;
+                    this.updateDisplay();
+                });
+
+                this.animationsToggle.addEventListener('change', (e) => {
+                    this.animationsEnabled = e.target.checked;
+                });
+
+                this.focusModeToggle.addEventListener('change', (e) => {
+                    this.focusMode = e.target.checked;
+                    if (this.focusMode) {
+                        this.focusModeDiv.classList.add('active');
+                    } else {
+                        this.focusModeDiv.classList.remove('active');
+                    }
+                });
+
+                this.exitFocusBtn.addEventListener('click', () => {
+                    this.focusModeToggle.checked = false;
+                    this.focusMode = false;
+                    this.focusModeDiv.classList.remove('active');
+                });
+
+                this.timeline.addEventListener('click', (e) => {
+                    const rect = this.timeline.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    this.currentIndex = Math.floor(percent * this.words.length);
+                    this.updateDisplay();
+                    this.updateStats();
+                });
+
+                let isDragging = false;
+                this.timeline.addEventListener('mousedown', () => isDragging = true);
+                document.addEventListener('mouseup', () => isDragging = false);
+                this.timeline.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const rect = this.timeline.getBoundingClientRect();
+                        const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                        this.currentIndex = Math.floor(percent * this.words.length);
+                        this.updateDisplay();
+                        this.updateStats();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (this.words.length === 0) return;
+                    
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        if (this.isPlaying) {
+                            this.pause();
+                        } else {
+                            this.play();
+                        }
+                    } else if (e.code === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.back();
+                    } else if (e.code === 'ArrowRight') {
+                        e.preventDefault();
+                        this.forward();
+                    } else if (e.code === 'KeyF') {
+                        e.preventDefault();
+                        this.focusModeToggle.checked = !this.focusModeToggle.checked;
+                        this.focusModeToggle.dispatchEvent(new Event('change'));
+                    } else if (e.code === 'Escape' && this.focusMode) {
+                        this.exitFocusBtn.click();
+                    }
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    this.saveProgress();
+                });
+            }
+
+            loadText() {
+                const text = this.textInput.value.trim();
+                if (!text) {
+                    alert('Por favor, insira algum texto.');
+                    return;
+                }
+
+                this.words = text
+                    .replace(/\s+/g, ' ')
+                    .split(' ')
+                    .filter(w => w.length > 0);
+
+                if (this.words.length === 0) {
+                    alert('Nenhuma palavra válida encontrada.');
+                    return;
+                }
+
+                this.currentIndex = 0;
+                this.readerSection.classList.add('active');
+                this.updateDisplay();
+                this.updateStats();
+                this.textInput.value = '';
+            }
+
+            getORP(word) {
+                const len = word.length;
+                if (len === 1) return 0;
+                if (len === 2) return 0;
+                if (len === 3) return 1;
+                if (len <= 5) return 1;
+                if (len <= 9) return 2;
+                if (len <= 13) return 3;
+                return 4;
+            }
+
+            displayWord(word, container) {
+                if (!word) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                const orpIndex = this.getORP(word);
+                let html = '';
+
+                for (let i = 0; i < word.length; i++) {
+                    const letter = word[i];
+                    const isORP = i === orpIndex;
+                    const className = isORP ? 'letter orp' : 'letter';
+                    html += `<span class="${className}" style="${isORP ? `color: ${this.orpColor}` : ''}">${letter}</span>`;
+                }
+
+                container.innerHTML = html;
+            }
+
+            updateDisplay() {
+                if (this.currentIndex >= this.words.length) {
+                    this.stop();
+                    return;
+                }
+
+                const word = this.words[this.currentIndex];
+                this.displayWord(word, this.wordDisplay);
+                this.displayWord(word, this.focusWordDisplay);
+
+                const progress = (this.currentIndex / this.words.length) * 100;
+                this.timelineProgress.style.width = progress + '%';
+            }
+
+            updateStats() {
+                const progress = Math.round((this.currentIndex / this.words.length) * 100);
+                this.progressPercent.textContent = progress + '%';
+
+                const remaining = this.words.length - this.currentIndex;
+                this.wordsRemaining.textContent = remaining.toLocaleString();
+
+                const minutesRemaining = remaining / this.wpm;
+                const mins = Math.floor(minutesRemaining);
+                const secs = Math.round((minutesRemaining - mins) * 60);
+                this.timeRemaining.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+                this.currentWordStat.textContent = (this.currentIndex + 1).toLocaleString();
+            }
+
+            play() {
+                if (this.words.length === 0) return;
+                
+                this.isPlaying = true;
+                this.playBtn.style.display = 'none';
+                this.pauseBtn.style.display = 'flex';
+
+                const intervalTime = 60000 / this.wpm;
+                
+                this.interval = setInterval(() => {
+                    this.currentIndex++;
+                    if (this.currentIndex >= this.words.length) {
+                        this.stop();
+                        return;
+                    }
+                    this.updateDisplay();
+                    this.updateStats();
+                }, intervalTime);
+            }
+
+            pause() {
+                this.isPlaying = false;
+                this.playBtn.style.display = 'flex';
+                this.pauseBtn.style.display = 'none';
+                clearInterval(this.interval);
+            }
+
+            stop() {
+                this.pause();
+                this.currentIndex = 0;
+                this.updateDisplay();
+                this.updateStats();
+            }
+
+            back() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.updateDisplay();
+                    this.updateStats();
+                }
+            }
+
+            forward() {
+                if (this.currentIndex < this.words.length - 1) {
+                    this.currentIndex++;
+                    this.updateDisplay();
+                    this.updateStats();
+                }
+            }
+
+            saveProgress() {
+                if (this.words.length === 0) return;
+                
+                const state = {
+                    words: this.words,
+                    currentIndex: this.currentIndex,
+                    wpm: this.wpm,
+                    fontSize: this.fontSize,
+                    orpColor: this.orpColor
+                };
+                
+                try {
+                    localStorage.setItem('rsvpReaderState', JSON.stringify(state));
+                } catch (e) {
+                    console.warn('Não foi possível salvar o progresso');
+                }
+            }
+
+            loadProgress() {
+                try {
+                    const saved = localStorage.getItem('rsvpReaderState');
+                    if (!saved) return;
+
+                    const state = JSON.parse(saved);
+                    this.words = state.words || [];
+                    this.currentIndex = state.currentIndex || 0;
+                    this.wpm = state.wpm || 300;
+                    this.fontSize = state.fontSize || 48;
+                    this.orpColor = state.orpColor || '#667eea';
+
+                    if (this.words.length > 0) {
+                        this.wpmRange.value = this.wpm;
+                        this.wpmInput.value = this.wpm;
+                        this.fontSizeRange.value = this.fontSize;
+                        this.fontSizeDisplay.textContent = this.fontSize + 'px';
+                        this.orpColorInput.value = this.orpColor;
+                        this.wordDisplay.style.fontSize = this.fontSize + 'px';
+                        this.focusWordDisplay.style.fontSize = (this.fontSize + 16) + 'px';
+                        
+                        this.readerSection.classList.add('active');
+                        this.updateDisplay();
+                        this.updateStats();
+                    }
+                } catch (e) {
+                    console.warn('Não foi possível carregar o progresso salvo');
+                }
+            }
+        }
+
+        const reader = new RSVPReader();
+    </script>
+</body>
+</html>
